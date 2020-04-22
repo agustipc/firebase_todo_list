@@ -76,18 +76,7 @@ class _HomePageState extends State<HomePage> {
 
   _addTodo(String text){
     if(text.isNotEmpty){
-      //se puede hacer las dos maneras
-
-    //   Firestore.instance.collection('todos').document().setData({
-    //     'what': text,
-    //     'done': false
-    //   });
-
-      Firestore.instance.collection('todos').add({
-        'what': text,
-        'done': false
-      });
-      _controller.clear();
+      addTodo(text);
     }
   }
 
@@ -135,7 +124,10 @@ class _HomePageState extends State<HomePage> {
                   )
                 ),
                 IconButton(
-                  onPressed: () => _addTodo(_controller.text),
+                  onPressed: () {
+                    _addTodo(_controller.text);
+                    _controller.clear();
+                  },
                   icon: Icon(
                     Icons.add
                   ),
@@ -166,6 +158,7 @@ class TodoList extends StatelessWidget {
       itemBuilder: (context, int index) {
         return ListTile(
           onTap: () => _toggleDone(todos[index]),
+          onLongPress: () => deleteTodo(todos[index]),
           title: Text(todos[index].what),
           leading: Checkbox(
             value: todos[index].done,
