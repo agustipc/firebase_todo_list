@@ -65,7 +65,32 @@ class TestPage extends StatelessWidget{
 //DocumentSnapshot: "Foto" de un documento en un momento de timepo
 //QuerySnapshot: "Foto" de una consulta a una coleccion
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+
+  TextEditingController _controller = TextEditingController();
+
+  _addTodo(String text){
+    if(text.isNotEmpty){
+      //se puede hacer las dos maneras
+
+    //   Firestore.instance.collection('todos').document().setData({
+    //     'what': text,
+    //     'done': false
+    //   });
+
+      Firestore.instance.collection('todos').add({
+        'what': text,
+        'done': false
+      });
+      _controller.clear();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +105,7 @@ class HomePage extends StatelessWidget {
             case ConnectionState.waiting:
               return Center(child: CircularProgressIndicator());
             case ConnectionState.active:
-              return TodoList(todos: snapshot.data);
+              return _buildBody(snapshot.data);
             case ConnectionState.done:
               return Center(child: Text("done??"));
             case ConnectionState.none:
@@ -91,12 +116,48 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildBody(List<Todo> todos){
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: TodoList(todos: todos)
+        ),
+        Material(
+          elevation: 10,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                  )
+                ),
+                IconButton(
+                  onPressed: () => _addTodo(_controller.text),
+                  icon: Icon(
+                    Icons.add
+                  ),
+                )
+              ],
+            ),
+          ),
+        )
+      ],
+    );
+  }
 }
 
 class TodoList extends StatelessWidget {
   final List<Todo> todos;
   TodoList({ @required this.todos });
 
+  _toggleDone(Todo todo){
+     Firestore.instance.collection('todos').document(todo.id).updateData({
+              'done': !todo.done
+            });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,19 +165,11 @@ class TodoList extends StatelessWidget {
       itemCount: todos.length,
       itemBuilder: (context, int index) {
         return ListTile(
-          onTap: (){
-            Firestore.instance.collection('todos').document(todos[index].id).updateData({
-              'done': !todos[index].done
-            });
-          },
+          onTap: () => _toggleDone(todos[index]),
           title: Text(todos[index].what),
           leading: Checkbox(
             value: todos[index].done,
-            onChanged: (newValue){
-              Firestore.instance.collection('todos').document(todos[index].id).updateData({
-                'done': newValue
-              });
-            },
+            onChanged: (_) => _toggleDone(todos[index]),
           ),
         );
       },
